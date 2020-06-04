@@ -18,7 +18,7 @@ from picamera import PiCamera
 
 camera = PiCamera()
 time.sleep(3)
-camera.capture('/home/pi/opencv-face/images/Image.jpg')
+camera.capture('/home/pi/Face_Unlock/images/Image.jpg')
 
 try:
     ser = serial.Serial('/dev/ttyACM0', 115200, timeout=0)
@@ -61,7 +61,7 @@ recognizer = pickle.loads(open(args["recognizer"], "rb").read())
 le = pickle.loads(open(args["le"], "rb").read())
 
 speech = "Starting facial reconition"
-subprocess.call(['/home/pi/opencv-face/speech.sh',speech])
+subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech])
 
 # load the image, resize it to have a width of 600 pixels (while
 # maintaining the aspect ratio), and then grab the image dimensions
@@ -139,15 +139,15 @@ while True:
                         except Exception:
                             print("Error sending data")
                             speech = "data transmission error"
-                            subprocess.call(['/home/pi/opencv-face/speech.sh',speech])
+                            subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech])
                         else:
                             print("unlock command sent")
-                        subprocess.call(['/home/pi/opencv-face/speech.sh',speech])
-                        subprocess.call(['/home/pi/opencv-face/speech.sh',speech2])
+                        subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech])
+                        subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech2])
                     else:
                         print("Unrecognized")
                         speech = "I don't recognize your face"
-                        subprocess.call(['/home/pi/opencv-face/speech.sh',speech])
+                        subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech])
 
                     # draw the bounding box of the face along with the associated
                     # probability
@@ -157,7 +157,8 @@ while True:
                             (0, 0, 255), 2)
                     cv2.putText(image, text, (startX, y),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
-    camera.capture('/home/pi/opencv-face/images/Image.jpg')
+    imwrite("CV2_Result.jpg",image);
+    camera.capture('/home/pi/Face_Unlock/images/Image.jpg')
     print("new capture")
 
     # show the output image
