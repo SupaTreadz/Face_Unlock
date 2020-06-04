@@ -15,6 +15,15 @@ import time
 import subprocess
 import serial
 from picamera import PiCamera
+import smtplib 
+from email.mime.multipart import MIMEMultipart 
+from email.mime.text import MIMEText 
+from email.mime.base import MIMEBase 
+from email import encoders 
+import credentials
+
+fromaddr = credentials.sendfrom
+toaddr = credentials.sendto
 
 camera = PiCamera()
 time.sleep(3)
@@ -157,7 +166,30 @@ while True:
                             (0, 0, 255), 2)
                     cv2.putText(image, text, (startX, y),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
-    imwrite("CV2_Result.jpg",image);
+                    
+                    #write out image result for email
+                    cv2.imwrite("CV2_Result.png",image);
+                    
+                    msg = MIMEMultipart() 
+                    msg['From'] = fromaddr 
+                    msg['To'] = toaddr 
+                    msg['Subject'] = "Face Unlock"
+                    body = "Door Unlocked"
+                    msg.attach(MIMEText(body, 'plain')) 
+                    filename = "C2V_Result.png"
+                    attachment = open("/home/pi/Face_Unlock/CV2_Result.png", "rb") 
+                    p = MIMEBase('application', 'octet-stream') 
+                    p.set_payload((attachment).read()) 
+                    encoders.encode_base64(p) 
+                    p.add_header('Content-Disposition', "attachment; filename= %s" % filename) 
+                    msg.attach(p) 
+                    s = smtplib.SMTP('smtp.gmail.com', 587) 
+                    s.starttls() 
+                    s.login(fromaddr, credentials.password) 
+                    text = msg.as_string() 
+                    s.sendmail(fromaddr, toaddr, text) 
+                    s.quit() 
+
     camera.capture('/home/pi/Face_Unlock/images/Image.jpg')
     print("new capture")
 
