@@ -24,13 +24,16 @@ import credentials
 
 fromaddr = credentials.sendfrom
 toaddr = credentials.sendto
+recognized = False
 
 camera = PiCamera()
-time.sleep(3)
+camera.rotation = 270
+time.sleep(2)
 camera.capture('/home/pi/Face_Unlock/images/Image.jpg')
 
 try:
-    ser = serial.Serial('/dev/ttyACM0', 115200, timeout=0)
+    ser = serial.Serial('/dev/ttyACM0', 115200, write_timeout=1, timeout=1)
+    ser.flush()
 except Exception:
     print("Warning - Serial Connection ACM0 not found")
     ser = None
@@ -69,7 +72,7 @@ embedder = cv2.dnn.readNetFromTorch(args["embedding_model"])
 recognizer = pickle.loads(open(args["recognizer"], "rb").read())
 le = pickle.loads(open(args["le"], "rb").read())
 
-speech = "Starting facial reconition"
+speech = "Starting facial recognition"
 subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech])
 
 # load the image, resize it to have a width of 600 pixels (while
@@ -77,15 +80,21 @@ subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech])
 while True:
     if ser is None:
         try:
-            ser = serial.Serial('/dev/ttyACM0', 115200, write_timeout=0, timeout=0)
+            ser = serial.Serial('/dev/ttyACM0', 115200, write_timeout=1, timeout=1)
+            ser.flush()
         except Exception:
             print("Warning - Serial Connection ACM0 not found")
             ser = None
         else:
             print("Successful connection to Serial on ACMO")
-    else:
-        ser.write(str.encode("heartbeat"))
-    #time.sleep(2)
+    
+    #if ser.in_waiting > 0:
+    #    line = ser.readline().decode('utf-8').rstrip()
+    #    print(line)
+    #    if line is "Locked!":
+    #        print("Successful lock") 
+    #        subprocess.call(['/home/pi/Face_Unlock/speech.sh',"Door locked"])
+    
     image = cv2.imread(args["image"])
     image = imutils.resize(image, width=600)
     (h, w) = image.shape[:2]
@@ -135,12 +144,13 @@ while True:
                     proba = preds[j]
                     name = le.classes_[j]
                     if str(name) == "sam":
+                        recognized = True
                         print("True")
-                        print(str(confidence))
-                        percent_confidence = round(confidence * 100,1)
+                        print(str(proba)) #changing from confidence to proba
+                        percent_confidence = round(proba * 100,1)
                         speech = "I am " + str(percent_confidence) + "% sure you are Sam"
-                        speech2 = "Welcome home, Sam"
-                        string1 = "unlock "
+                        speech2 = "Welcome home"
+                        string1 = "unlock="
                         string1e = string1.encode()
                         print(string1e)
                         try:
@@ -151,15 +161,36 @@ while True:
                             subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech])
                         else:
                             print("unlock command sent")
+                        
+                        if ser.in_waiting > 0:
+                            line = ser.readline().decode('utf-8').rstrip()
+                            print(line)
+                            if line is "Unlocked!":
+                                print("Successful unlock") 
+
+                        subprocess.call(['/home/pi/Face_Unlock/speech.sh',"Door unlocked"])
                         subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech])
                         subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech2])
+                        time.sleep(10)
                     else:
+                        recognized = False
                         print("Unrecognized")
-                        speech = "I don't recognize your face"
-                        subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech])
+                        #speech = "I don't recognize your face"
+                        #subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech])
+                        string2 = "reject="
+                        string2e = string2.encode()
+                        print(string2e)
+                        try:
+                            ser.write(string2e)
+                        except Exception:
+                            print("Error sending data")
+                        else:
+                            print("reject command sent")
 
                     # draw the bounding box of the face along with the associated
                     # probability
+
+
                     text = "{}: {:.2f}%".format(name, proba * 100)
                     y = startY - 10 if startY - 10 > 10 else startY + 10
                     cv2.rectangle(image, (startX, startY), (endX, endY),
@@ -173,8 +204,12 @@ while True:
                     msg = MIMEMultipart() 
                     msg['From'] = fromaddr 
                     msg['To'] = toaddr 
-                    msg['Subject'] = "Face Unlock"
-                    body = "Door Unlocked"
+                    if recognized:
+                        msg['Subject'] = "Face Unlocked"
+                        body = "Door Unlocked"
+                    else:
+                        msg['Subject'] = "Face Rejected"
+                        body = "Door Not Unlocked"
                     msg.attach(MIMEText(body, 'plain')) 
                     filename = "C2V_Result.png"
                     attachment = open("/home/pi/Face_Unlock/CV2_Result.png", "rb") 
