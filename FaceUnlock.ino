@@ -10,6 +10,7 @@
 #define doorSensorPin 3
 #define buttonPin 8
 #define serialLED 12
+#define lockButtonPin 2
 
 CRGB leds[NUM_LEDS];
 Servo lockServo;  // create servo object to control a servo
@@ -27,6 +28,7 @@ int oldindex = 0;
 int pattern1 = 0;
 boolean unlockindex = false;
 volatile boolean interrupt = false;
+volatile boolean lockbutton = false;
 char serIn;
 
 void setup()
@@ -44,6 +46,9 @@ void setup()
 
   pinMode(doorSensorPin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(doorSensorPin), doorOpen, RISING);
+
+  pinMode(lockButtonPin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(lockButtonPin), callLock, RISING);
   
   pinMode(buttonPin, INPUT_PULLUP);
   buttonState = digitalRead(buttonPin);
@@ -138,13 +143,25 @@ void loop()
   {     
     while(digitalRead(doorSensorPin)==HIGH)
     {
-      //fill_solid(leds, NUM_LEDS, CRGB::Yellow);
-      flash(); 
-      delay(500);
-      //fill_solid(leds, NUM_LEDS, CRGB::Black);
+      if(doorLocked)
+      {
+        alarm(); 
+        delay(500);
+      }
+      else
+      {
+        flash(); 
+        delay(500);
+      }
     }
-    
   }
+  
+  if(lockbutton)
+  {
+    lock();
+    lockbutton = false;
+  }
+  
   if (Serial.available()>0) 
   {
     serIn=Serial.read();
@@ -211,6 +228,10 @@ void doorOpen()
 {
   interrupt = true;
 }
+void callLock()
+{
+  lockbutton = true;
+}
 void flash()
 {
   tone(speakerPin, 300);
@@ -233,5 +254,29 @@ void flash()
   fill_solid(leds, NUM_LEDS, CRGB::Black);
   FastLED.show();
   delay(50);
-  
+}
+void alarm()
+{
+  tone(speakerPin, 200);
+  fill_solid(leds, NUM_LEDS, CRGB::Red);
+  FastLED.show();
+  delay(50);
+  fill_solid(leds, NUM_LEDS, CRGB::Blue);
+  FastLED.show();
+  delay(50);
+  noTone(speakerPin);
+  fill_solid(leds, NUM_LEDS, CRGB::Red);
+  FastLED.show();
+  delay(50);
+  tone(speakerPin, 1000);  
+  fill_solid(leds, NUM_LEDS, CRGB::Blue);
+  FastLED.show();
+  delay(50);
+  fill_solid(leds, NUM_LEDS, CRGB::Red);
+  FastLED.show();
+  delay(50);
+  fill_solid(leds, NUM_LEDS, CRGB::Blue);
+  FastLED.show();
+  delay(50);
+  noTone(speakerPin);
 }
