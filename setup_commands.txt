@@ -1,0 +1,57 @@
+mkdir Face_Unlock
+git clone https://github.com/SupaTreadz/Face_Unlock.git
+sudo apt-get update
+sudo apt update
+sudo apt full-upgrade
+sudo apt install vim
+pip install --upgrade pip
+
+#take a bunch of pictures and populate the appropriate folder
+
+#install a bunch of stuff to get OPENCV working
+sudo apt-get install python-dev
+pip3 install setuptools
+sudo python3 -m pip install -U pip
+sudo python3 -m pip install -U setuptools
+sudo python3 -m pip install --upgrade pip setuptools wheel
+sudo python3 -m pip install opencv-python
+sudo python3 -m pip install imutils
+sudo python3 -m pip install scikit-learn
+
+sudo apt-get install libcblas-dev
+sudo apt-get install libhdf5-dev
+sudo apt-get install libhdf5-serial-dev
+sudo apt-get install libatlas-base-dev
+sudo apt-get install libjasper-dev 
+sudo apt-get install libqtgui4
+
+#start the training steps to recognize the images
+python3 extract_embeddings.py --dataset dataset --embeddings output/embeddings.pickle --detector face_detection_model --embedding-model openface_nn4.small2.v1.t7
+
+python3 train_model.py --embeddings output/embeddings.pickle --recognizer output/recognizer.pickle --le output/le.pickle
+
+#create credentials file for email system, needs password, sendfrom, sendto
+vim credentials.py
+
+#enable camera
+sudo raspi-config
+
+#install raspi I2S code from adafruit tutorial
+curl -sS https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2samp.sh | bash
+sudo reboot
+curl -sS https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2samp.sh | bash
+sudo reboot
+sudo apt-get install mplayer
+
+#follow the detailed install instructions from adafruit
+sudo vim /boot/config.txt
+sudo vim /etc/asound.conf
+sudo vim /etc/modules
+sudo vim /etc/modprobe.d/raspi-blacklist.conf 
+curl -sS https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2samp.sh | bash
+
+#running the program:
+
+python3 recognize.py --detector face_detection_model --embedding-model openface_nn4.small2.v1.t7 --recognizer output/recognizer.pickle --le output/le.pickle --image images/Image.jpg
+
+#run in loop, use forever?

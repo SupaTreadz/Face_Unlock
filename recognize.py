@@ -32,7 +32,7 @@ time.sleep(2)
 camera.capture('/home/pi/Face_Unlock/images/Image.jpg')
 
 try:
-    ser = serial.Serial('/dev/ttyACM0', 115200, write_timeout=1, timeout=1)
+    ser = serial.Serial('/dev/ttyACM0', 9600, write_timeout=1, timeout=1)
     ser.flush()
 except Exception:
     print("Warning - Serial Connection ACM0 not found")
@@ -150,7 +150,7 @@ while True:
                         percent_confidence = round(proba * 100,1)
                         speech = "I am " + str(percent_confidence) + "% sure you are Sam"
                         speech2 = "Welcome home"
-                        string1 = "unlock="
+                        string1 = "u"
                         string1e = string1.encode()
                         print(string1e)
                         try:
@@ -162,11 +162,11 @@ while True:
                         else:
                             print("unlock command sent")
                         
-                        if ser.in_waiting > 0:
-                            line = ser.readline().decode('utf-8').rstrip()
-                            print(line)
-                            if line is "Unlocked!":
-                                print("Successful unlock") 
+                        #if ser.in_waiting > 0:
+                        #    line = ser.readline().decode('utf-8').rstrip()
+                        #    print(line)
+                        #    if line is "Unlocked!":
+                        #        print("Successful unlock") 
 
                         subprocess.call(['/home/pi/Face_Unlock/speech.sh',"Door unlocked"])
                         subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech])
@@ -177,7 +177,7 @@ while True:
                         print("Unrecognized")
                         #speech = "I don't recognize your face"
                         #subprocess.call(['/home/pi/Face_Unlock/speech.sh',speech])
-                        string2 = "reject="
+                        string2 = "r"
                         string2e = string2.encode()
                         print(string2e)
                         try:
@@ -226,7 +226,7 @@ while True:
                     s.quit() 
 
     camera.capture('/home/pi/Face_Unlock/images/Image.jpg')
-    print("new capture")
+    #print("new capture")
 
     # show the output image
     #cv2.imshow("Image", image)
