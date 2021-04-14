@@ -20,7 +20,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText 
 from email.mime.base import MIMEBase 
 from email import encoders 
+import logging
 import credentials
+
+logging.basicConfig(filename='faceunlock.log', level=logging.INFO, filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
+
+logging.info('Starting program')
 
 fromaddr = credentials.sendfrom
 toaddr = credentials.sendto
@@ -37,9 +42,11 @@ try:
 except Exception:
     print("Warning - Serial Connection ACM0 not found")
     ser = None
+    logging.warning('ACM0 serial connection not found')
 else:
     print("Successful connection to Serial on ACMO")
     print(str(ser))
+    logging.info('Connected to ' + str(ser))
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -53,7 +60,7 @@ ap.add_argument("-r", "--recognizer", required=True,
         help="path to model trained to recognize faces")
 ap.add_argument("-l", "--le", required=True,
         help="path to label encoder")
-ap.add_argument("-c", "--confidence", type=float, default=0.5,
+ap.add_argument("-c", "--confidence", type=float, default=0.9,
         help="minimum probability to filter weak detections")
 args = vars(ap.parse_args())
 
@@ -116,9 +123,10 @@ while True:
             confidence = detections[0, 0, i, 2]
 
             # filter out weak detections
-            if confidence > args["confidence"]:
+            if confidence > args["confidence"]: #recognizes likely face
                     # compute the (x, y)-coordinates of the bounding box for the
                     # face
+		    logging.info('Face detected')
                     box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
                     (startX, startY, endX, endY) = box.astype("int")
 
@@ -143,11 +151,12 @@ while True:
                     j = np.argmax(preds)
                     proba = preds[j]
                     name = le.classes_[j]
-                    if str(name) == "sam":
+                    if str(name) == "sam" and proba > 0.90: #recognized face and 90% probability it's my face
                         recognized = True
                         print("True")
                         print(str(proba)) #changing from confidence to proba
                         percent_confidence = round(proba * 100,1)
+		        logging.info('Sam detected '+str(percent_confidence))
                         speech = "I am " + str(percent_confidence) + "% sure you are Sam"
                         speech2 = "Welcome home"
                         string1 = "u"

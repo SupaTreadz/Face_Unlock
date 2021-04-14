@@ -1,2 +1,6 @@
 *credentials*
 *.jpg
+images/Image.jpg
+*.png
+*.log
+nohup.out
