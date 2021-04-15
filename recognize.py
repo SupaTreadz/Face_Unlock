@@ -126,7 +126,7 @@ while True:
             if confidence > args["confidence"]: #recognizes likely face
                     # compute the (x, y)-coordinates of the bounding box for the
                     # face
-		    logging.info('Face detected')
+                    logging.info('Face detected')
                     box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
                     (startX, startY, endX, endY) = box.astype("int")
 
@@ -156,7 +156,7 @@ while True:
                         print("True")
                         print(str(proba)) #changing from confidence to proba
                         percent_confidence = round(proba * 100,1)
-		        logging.info('Sam detected '+str(percent_confidence))
+                        logging.info('Sam detected '+str(percent_confidence))
                         speech = "I am " + str(percent_confidence) + "% sure you are Sam"
                         speech2 = "Welcome home"
                         string1 = "u"
